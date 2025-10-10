@@ -8,7 +8,7 @@ class ImageAdDetector {
         // Configure thresholds for different types of content
         this.thresholds = {
             normal: 0.25,    // Threshold for normal images
-            stake: 0.55,     // Threshold for Stake ads
+            stake: 0.25,     // Threshold for Stake ads
             default: 0.25    // Default threshold for any new company
         };
         
