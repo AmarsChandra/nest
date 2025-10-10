@@ -8,8 +8,7 @@ class ImageAdDetector {
         // Configure thresholds for different types of content
         this.thresholds = {
             normal: 0.25,    // Threshold for normal images
-            chips: 0.25,     // Threshold for Chips.gg ads
-            kalshi: 0.80,    // Threshold for Kalshi ads
+            stake: 0.55,     // Threshold for Stake ads
             default: 0.25    // Default threshold for any new company
         };
         
@@ -27,7 +26,7 @@ class ImageAdDetector {
             console.log("Successfully loaded normal images:", this.normalImages.length);
             
             // Load ad sets for different companies
-            const companies = ['chips', 'other_company']; // Add more companies as needed
+            const companies = ['stake']; // Add more companies as needed
             for (const company of companies) {
                 const adImageUrls = await this.getImageUrls(`ads/${company}`);
                 console.log(`Found ad image URLs for ${company}:`, adImageUrls);
