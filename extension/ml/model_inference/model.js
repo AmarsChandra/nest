@@ -8,7 +8,7 @@ class ImageAdDetector {
         // Configure thresholds for different types of content
         this.thresholds = {
             normal: 0.25,    // Threshold for normal images
-            stake: 0.25,     // Threshold for Stake ads
+            stake: 0.35,     // Threshold for Stake ads (optimized for betting slips)
             default: 0.25    // Default threshold for any new company
         };
         
@@ -258,7 +258,26 @@ class ImageAdDetector {
         const data1 = ctx1.getImageData(0, 0, targetWidth, targetHeight).data;
         const data2 = ctx2.getImageData(0, 0, targetWidth, targetHeight).data;
 
-        // Calculate similarity (simple pixel comparison)
+        // Calculate multiple similarity metrics
+        const pixelSimilarity = this.calculatePixelSimilarity(data1, data2);
+        const structuralSimilarity = this.calculateStructuralSimilarity(data1, data2, targetWidth, targetHeight);
+        const colorDistributionSimilarity = this.calculateColorDistribution(data1, data2);
+
+        // Weight the different similarity measures
+        const weightedSimilarity = (
+            pixelSimilarity * 0.4 +
+            structuralSimilarity * 0.4 +
+            colorDistributionSimilarity * 0.2
+        );
+
+        console.log("Pixel similarity:", pixelSimilarity);
+        console.log("Structural similarity:", structuralSimilarity);
+        console.log("Color distribution similarity:", colorDistributionSimilarity);
+        console.log("Weighted similarity score:", weightedSimilarity);
+        return weightedSimilarity;
+    }
+
+    calculatePixelSimilarity(data1, data2) {
         let similarPixels = 0;
         let totalPixels = 0;
 
@@ -293,9 +312,71 @@ class ImageAdDetector {
             totalPixels++;
         }
 
-        const similarity = similarPixels / totalPixels;
-        console.log("Image similarity score:", similarity);
-        return similarity;
+        return similarPixels / totalPixels;
+    }
+
+    calculateStructuralSimilarity(data1, data2, width, height) {
+        // Look for similar edge patterns and layout structures
+        let structuralMatches = 0;
+        let totalChecks = 0;
+
+        // Check for similar horizontal and vertical lines (UI elements)
+        const step = 8;
+        for (let y = 0; y < height - step; y += step) {
+            for (let x = 0; x < width - step; x += step) {
+                const edge1 = this.detectEdges(data1, x, y, step, width);
+                const edge2 = this.detectEdges(data2, x, y, step, width);
+                
+                if (Math.abs(edge1 - edge2) < 0.3) {
+                    structuralMatches++;
+                }
+                totalChecks++;
+            }
+        }
+
+        return structuralMatches / totalChecks;
+    }
+
+    detectEdges(data, x, y, size, width) {
+        let edgeStrength = 0;
+        for (let dy = 0; dy < size; dy++) {
+            for (let dx = 0; dx < size; dx++) {
+                const idx = ((y + dy) * width + (x + dx)) * 4;
+                if (idx < data.length) {
+                    const brightness = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                    edgeStrength += brightness;
+                }
+            }
+        }
+        return edgeStrength / (size * size * 255);
+    }
+
+    calculateColorDistribution(data1, data2) {
+        // Compare color histograms to detect similar color schemes
+        const histogram1 = this.calculateHistogram(data1);
+        const histogram2 = this.calculateHistogram(data2);
+        
+        let intersection = 0;
+        let union = 0;
+        
+        for (let i = 0; i < histogram1.length; i++) {
+            intersection += Math.min(histogram1[i], histogram2[i]);
+            union += Math.max(histogram1[i], histogram2[i]);
+        }
+        
+        return union > 0 ? intersection / union : 0;
+    }
+
+    calculateHistogram(data) {
+        const histogram = new Array(32).fill(0); // Simplified color histogram
+        for (let i = 0; i < data.length; i += 4) {
+            const r = Math.floor(data[i] / 8);
+            const g = Math.floor(data[i + 1] / 8);
+            const b = Math.floor(data[i + 2] / 8);
+            const index = r * 64 + g * 8 + b;
+            histogram[Math.floor(index / 32)]++;
+        }
+        return histogram;
     }
 }
 
